@@ -152,5 +152,3 @@ mercor-referral/
 - Brainstorming architecture and data structure approaches.
 - Suggesting boilerplate TypeScript + Jest configurations.
 - Debugging type and configuration issues.
-- Providing explanations for algorithmic design choices.
-- All final logic and design decisions were implemented, reviewed, and understood before submission.
