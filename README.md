@@ -89,7 +89,7 @@ BFS is chosen over DFS here for clarity and predictable memory usage when calcul
 - adoption_prob is a monotonic function mapping bonus → probability.
 
 **Reasoning:**
--Binary search ensures minimal bonus is found efficiently. The exponential search prevents guessing the range.
+- Binary search ensures minimal bonus is found efficiently. The exponential search prevents guessing the range.
 
 ## Complexity Analysis
 ### Part 1
