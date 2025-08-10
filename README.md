@@ -1,6 +1,6 @@
 # Mercor Challenge — Referral Network
 
-## Language & Setup
+### Language & Setup
 - **Language:** TypeScript
 - **Node.js Version:** >= 20.x
 - **Package Manager:** npm
@@ -20,24 +20,35 @@ npm run build
 ```bash
 # Run the entire test suite once
 npm test
-
-# Run tests in watch mode (optional)
-npm run test:watch
 ```
 
 ## Design Choices
 ### Part 1 — Core Data Structure
 
-- The referral network is represented as a Directed Acyclic Graph (DAG) using:
-- children: Map<string, Set<string>> — adjacency list storing direct referrals.
-- parent: Map<string, string> — quick lookup to enforce the “unique referrer” rule.
+**Goal:** Store users and directed referral links while enforcing: (1) no self‑referrals, (2) a user has exactly one referrer, (3) the graph remains acyclic.
+
+**Data model:**
+- children: Map<string, Set<string>> — adjacency list of direct referrals (outgoing edges).
+- parent: Map<string, string> — maps a candidate → their unique referrer (incoming edge).
+- Users are added lazily (ensureUser) so lookups are always defined.
+
+**API surface:**
+- addUser(u): void — idempotent user creation.
+- addReferral(referrer, candidate): boolean — returns true on success; false if any rule is violated (self, duplicate/second referrer, cycle).
+- getDirectReferrals(u): string[] — immediate children of u.
+- users(): string[] — all known user IDs.
+- Design note: Returning boolean (instead of throwing) keeps the API simple for batch/ETL style inserts and mirrors the “reject operation” wording in the prompt.
 
 **Why this design:**
+- Adjacency list is cache‑friendly and efficient for traversals and direct queries.
+- parent map gives constant‑time enforcement of the “unique referrer” rule.
+- The BFS reachability guard is simple and correct; it avoids heavy machinery (e.g., dynamic topo‑order maintenance).
 
-- Adjacency list gives O(1) direct referral lookups and efficient BFS/DFS traversal.
-- Parent map allows constant-time checks for whether a candidate already has a referrer.
-- Cycle prevention is handled by a reachability check (reachable()), ensuring acyclicity before adding edges.
-- Adding and querying users remain efficient even as the network grows.
+**Complexity Analysis:**
+- addReferral: O(V + E) in worst case (cycle check BFS).
+- getDirectReferrals: O(out-degree).
+- Space: O(V + E) for adjacency + parent map.
+
 
 ### Part 2 — Reach Calculation
 
@@ -46,7 +57,11 @@ npm run test:watch
 - Top-k Referrers: Sorts all users by total reach in descending order; ties are broken alphabetically.
 
 **Reasoning:**
-BFS is chosen over DFS here for clarity and predictable memory usage when calculating total reach.
+- BFS is chosen over DFS here for clarity and predictable memory usage when calculating total reach.
+
+**Complexity Analysis:**
+- totalReach: O(V + E) BFS over downstream nodes.
+- topReferrersByReach: O(V * (V + E)) in worst case due to BFS per user.
 
 ### Part 3 — Influencer Metrics
 
@@ -66,6 +81,11 @@ BFS is chosen over DFS here for clarity and predictable memory usage when calcul
 - Unique Reach Expansion: Best when minimizing redundancy in campaigns.
 - Flow Centrality: Best when targeting structurally important connectors.
 
+**Complexity Analysis:**
+- Unique Reach Expansion: O(V * (V + E)) for downstream set precomputation + O(limit * V) for greedy selection.
+- BFS from each node: O(V * (V + E))
+- Triple nested loop: O(V³) worst case (acceptable for small networks, prioritizes clarity).
+
 ### Part 4 — Network Growth Simulation
 
 - Cohort-based model with 10 capacity levels per user.
@@ -74,12 +94,15 @@ BFS is chosen over DFS here for clarity and predictable memory usage when calcul
 - New hires start with full capacity; referrers are retired when capacity reaches zero.
 
 **Functions:**
-
 - simulate(p, days): Returns cumulative expected referrals per day.
 - days_to_target(p, target): Finds the minimum days to reach a target.
 
 **Reasoning:**
 - A cohort-based deterministic expected-value model avoids the randomness of Monte Carlo simulations while remaining O(days) in complexity.
+
+**Complexity Analysis:**
+- simulate: O(days) with small constant factor (10 capacity levels).
+- days_to_target: O(days).
 
 ### Part 5 — Referral Bonus Optimization
 
@@ -91,34 +114,7 @@ BFS is chosen over DFS here for clarity and predictable memory usage when calcul
 **Reasoning:**
 - Binary search ensures minimal bonus is found efficiently. The exponential search prevents guessing the range.
 
-## Complexity Analysis
-### Part 1
-
-- addReferral: O(V + E) in worst case (cycle check BFS).
-- getDirectReferrals: O(out-degree).
-- Space: O(V + E) for adjacency + parent map.
-
-### Part 2
-
-- totalReach: O(V + E) BFS over downstream nodes.
-- topReferrersByReach: O(V * (V + E)) in worst case due to BFS per user.
-
-### Part 3
-
-- Unique Reach Expansion: O(V * (V + E)) for downstream set precomputation + O(limit * V) for greedy selection.
-
-**Flow Centrality:**
-
-- BFS from each node: O(V * (V + E))
-- Triple nested loop: O(V³) worst case (acceptable for small networks, prioritizes clarity).
-
-### Part 4
-
-- simulate: O(days) with small constant factor (10 capacity levels).
-- days_to_target: O(days).
-
-### Part 5
-
+**Complexity Analysis:**
 - min_bonus_for_target: O(log B * days), where B is the bonus search space size.
 
 ## Project Structure
@@ -146,9 +142,9 @@ mercor-referral/
 
 ```
 
-## AI Usage Note
-
-#### During development, AI assistance (ChatGPT) was used for:
+#### During development, AI assistance and Online Documentation was used for:
+- Suggesting boilerplate TypeScript and Jest configurations.
+- Debugging type, syntax, and configuration issues.
+- Exploring standard algorithms and relevant library documentation.
 - Brainstorming architecture and data structure approaches.
-- Suggesting boilerplate TypeScript + Jest configurations.
-- Debugging type and configuration issues.
+- Validating the correctness of logic through test case discussions.
