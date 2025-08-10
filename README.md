@@ -22,7 +22,7 @@ npm run build
 npm test
 ```
 
-**Approximate Time Spent:-** 10 hours 
+**Approximate Time Spent:-** 12 hours 
 
 ## Design Choices
 ### Part 1 — Core Data Structure
