@@ -1,4 +1,4 @@
-# Mercor Challenge — Referral Network
+# Referral Network
 
 ### Language & Setup
 - **Language:** TypeScript
@@ -21,8 +21,6 @@ npm run build
 # Run the entire test suite once
 npm test
 ```
-
-**Approximate Time Spent:-** 12 hours 
 
 ## Design Choices
 ### Part 1 — Core Data Structure
@@ -143,10 +141,3 @@ mercor-referral/
     └── bonus-optimizer.test.ts
 
 ```
-
-#### During development, AI assistance and Online Documentation was used for:
-- Suggesting boilerplate TypeScript and Jest configurations.
-- Debugging type, syntax, and configuration issues.
-- Exploring standard algorithms and relevant library documentation.
-- Brainstorming architecture and data structure approaches.
-- Validating the correctness of logic through test case discussions.
